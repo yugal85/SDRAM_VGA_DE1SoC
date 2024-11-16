@@ -1,5 +1,7 @@
 # SDRAM_VGA_DE1SoC
 
+
+**Platform Designer Connections**
 ![Screenshot 2024-11-16 090358](https://github.com/user-attachments/assets/78135599-b61b-4177-bbe6-d2632f9101d0)
 
 
@@ -21,9 +23,12 @@
 
 
 
+**Interface Setup**
+
 ![IMG_7379](https://github.com/user-attachments/assets/59908163-16f3-4002-9f1a-9c797f13cecb)
 
 
+**VGA Display Output**
 
 ![IMG_7378](https://github.com/user-attachments/assets/a0cae084-fb33-4130-880b-0f7cd9ca94b6)
 
