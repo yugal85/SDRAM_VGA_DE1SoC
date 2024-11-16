@@ -1,0 +1,79 @@
+`timescale 1ns / 1ps
+
+module fifo
+    #(parameter W = 4, B = 8)  // W: address width, B: data width
+    (
+        input clk,
+        input rst_n,
+        input wr,              // Write enable
+        input rd,              // Read enable
+        input [B-1:0] wr_data, // Data to write
+        output reg [B-1:0] rd_data,  // Data to read
+        output reg full,       // Full flag
+        output reg empty       // Empty flag
+    );
+
+    // Internal memory array
+    reg [B-1:0] array_reg [0:(2**W)-1];
+    reg [W-1:0] rd_ptr = 0;  // Read pointer
+    reg [W-1:0] wr_ptr = 0;  // Write pointer
+    reg fifo_wrap;           // Wrap flag to differentiate full/empty condition
+
+    // Initialization of flags
+    initial begin
+        full = 0;
+        empty = 1;
+        fifo_wrap = 0;
+    end
+
+    // Write operation
+    always @(posedge clk) begin
+        if (wr && !full) begin
+            array_reg[wr_ptr] <= wr_data;
+        end
+    end
+
+    // Read operation (register output to avoid glitches)
+    always @(posedge clk) begin
+        if (rd && !empty) begin
+            rd_data <= array_reg[rd_ptr];
+        end
+    end
+
+    // FIFO control logic for read/write pointers and flags
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            rd_ptr <= 0;
+            wr_ptr <= 0;
+            full <= 0;
+            empty <= 1;
+            fifo_wrap <= 0;
+        end else begin
+            case ({wr, rd})
+                2'b01: if (!empty) begin  // Read operation
+                    rd_ptr <= rd_ptr + 1;
+                    if (rd_ptr == (2**W - 1)) fifo_wrap <= 0; // Clear wrap on read pointer reset
+                    empty <= (rd_ptr + 1 == wr_ptr) && !fifo_wrap;
+                    full <= 0;
+                end
+                2'b10: if (!full) begin  // Write operation
+                    wr_ptr <= wr_ptr + 1;
+                    if (wr_ptr == (2**W - 1)) fifo_wrap <= 1; // Set wrap on write pointer reset
+                    empty <= 0;
+                    full <= (wr_ptr + 1 == rd_ptr) && fifo_wrap;
+                end
+                2'b11: if (!empty && !full) begin  // Simultaneous read and write
+                    rd_ptr <= rd_ptr + 1;
+                    wr_ptr <= wr_ptr + 1;
+                    // Wrap handling
+                    if (rd_ptr == (2**W - 1)) fifo_wrap <= 0;  // Clear wrap on read reset
+                    if (wr_ptr == (2**W - 1)) fifo_wrap <= 1;  // Set wrap on write reset
+                    empty <= (rd_ptr + 1 == wr_ptr) && !fifo_wrap;
+                    full <= (wr_ptr + 1 == rd_ptr) && fifo_wrap;
+                end
+            endcase
+        end
+    end
+
+endmodule
+
